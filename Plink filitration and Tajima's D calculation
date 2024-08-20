@@ -46,4 +46,11 @@ singularity exec /usr/local/biotools/v/vcftools\:0.1.16--pl5321hd03093a_7 vcftoo
 singularity exec /usr/local/biotools/v/vcftools\:0.1.16--pl5321hd03093a_7 vcftools --vcf Adigitifera_23OnlyLarva_geno035_maf035_hwe.vcf   --TajimaD 100 --keep Control_pop --out Control_pop
 
 ##remove non calculated loci
-grep -v nan Control_pop.Tajima.D
+grep -v nan Control_pop.Tajima.D > Control_pop_ed.Tajima.D
+grep -v nan Heat_pop.Tajima.D > Heat_pop_ed.Tajima.D
+
+##calculate 95 percentile or 5 percentile
+
+Rscript 95percentile.r
+
+#select 95 or 5 percentile loci
