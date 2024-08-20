@@ -51,6 +51,11 @@ grep -v nan Heat_pop.Tajima.D > Heat_pop_ed.Tajima.D
 
 ##calculate 95 percentile or 5 percentile
 
-Rscript 95percentile.r
+Rscript Rscript_percentile.r
 
-#select 95 or 5 percentile loci
+#select 95 or 5 percentile loci please add * output of 5 percentile calculations or ** output of 95 percentile, respectively.
+awk '$4>*' Control_pop_ed.Tajima.D>Control_5percentile
+awk '$4>**' Control_pop_ed.Tajima.D>Control_95percentile
+
+awk '$4>*' Heat_pop_ed.Tajima.D>Heat_5percentile
+awk '$4>**' Heat_pop_ed.Tajima.D>Heat_95percentile
