@@ -49,11 +49,11 @@ singularity exec /usr/local/biotools/v/vcftools\:0.1.16--pl5321hd03093a_7 vcftoo
 grep -v nan Control_pop.Tajima.D > Control_pop_ed.Tajima.D
 grep -v nan Heat_pop.Tajima.D > Heat_pop_ed.Tajima.D
 
-##calculate 95 percentile or 5 percentile
+##calculate 95 percentile or 5 percentile. Please change file names
 
 Rscript Rscript_percentile.r
 
-#select 95 or 5 percentile loci please add * output of 5 percentile calculations or ** output of 95 percentile, respectively.
+#select 95 or 5 percentile loci. Please add * output of 5 percentile calculations or ** output of 95 percentile, respectively.
 awk '$4>*' Control_pop_ed.Tajima.D>Control_5percentile
 awk '$4>**' Control_pop_ed.Tajima.D>Control_95percentile
 
