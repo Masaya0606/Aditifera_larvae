@@ -1,0 +1,5 @@
+data<-read.table("Control_pop_ed.Tajima.D", header=TRUE)
+percentile5<-quantile(data[,4], 0.05)
+percentile95<-quantile(data[,4], 0.95)
+print(percentile5)
+print(percentile95)
