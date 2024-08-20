@@ -1,4 +1,53 @@
+#quality check with fastq
+#!/usr/bin/sh
+#$ -S /usr/bin/bash
+#$ -cwd
+#$ -l s_vmem=100G
+#$ -l mem_req=100G
 
+ls Adigitifera_larva | cut -f 1 -d "." | sort -u > fq_list.txt
+
+for i in `cat fq_list.txt`
+do
+
+fastp -l 150 -B 150 -b 150 -i Adigitifera_larva/"$i".1.fastq.gz -I Adigitifera_larva/"$i".2.fastq.gz -o "$i".1_out.fq.gz -O "$i".2_out.fq.gz
+
+done
+
+mkdir Adigitifera_larva_fastq
+cp *.gz Adigitifera_larva/
+cd Adigitifera_larva
+gunzip *
+
+##reference mapping
+#!/bin/sh
+#$ -S /bin/bash
+#$ -cwd
+#$ -l s_vmem=100G
+#$ -l mem_req=100G
+
+
+module load singularity
+singularity exec /usr/local/biotools/b/bwa-mem2\:2.2.1--he513fc3_0 bwa-mem2 index -p A_digi_2.0 /reference/Acropora_digitifera_2.0/GCA_014634065.1_Adig_2.0_genomic.fna
+
+
+ls Adigitifera_larva_fastq | cut -f 1 -d "z" |rev|cut -c 10- |rev|sort -u > list.txt
+
+mkdir sam
+
+for i in `cat list.txt`
+do
+
+singularity exec /usr/local/biotools/b/bwa-mem2\:2.2.1--he513fc3_0 bwa-mem2 mem -t 8 A_digi_2.0 -R "@RG\tID:${i}\tSM:${i}\tPL:ILLUMINA\tLB:${i}" Adigitifera_larva_fastq/"$i".1_out.fq Adigitifera_larva_fastq/"$i".2_out.fq > sam/"$i".sam
+
+singularity exec /usr/local/biotools/s/samtools\:1.9--h46bd0b3_0 samtools sort -O bam -o "$i".bam sam/"$i".sam
+singularity exec /usr/local/biotools/s/samtools\:1.9--h46bd0b3_0 samtools index "$i".bam
+
+done
+
+mkdir bam
+mv *.bam bam/
+mv *.bai bam/
 
 ## SNP calling with refmap.pl in Stacks
 #!/bin/sh
@@ -9,4 +58,5 @@
 #$ -l d_rt=960:00:00
 #$ -l s_rt=960:00:00
 
-singularity exec /usr/local/biotools/s/stacks\:2.60--h9a82719_0 ref_map.pl -T 3 -o /home/mmorita0606/masaya/find_predicted_proteins/Acropora_digitifera_Larvae23/refmap_larvae  --popmap list_Acropora_larvae_2.txt --samples /home/mmorita0606/masaya/find_predicted_proteins/Acropora_digitifera_Larvae23/bam/ -X "populations: --plink" -X "populations: --phylip-var" -X "populations: --vcf" -X "populations: --treemix"
+mkdir refmap_larvae
+singularity exec /usr/local/biotools/s/stacks\:2.60--h9a82719_0 ref_map.pl -T 3 -o /refmap_larvae  --popmap list_Acropora_larvae_2.txt --samples /bam/ -X "populations: --plink" -X "populations: --phylip-var" -X "populations: --vcf" -X "populations: --treemix"
