@@ -1,0 +1,90 @@
+#read dat
+  Larva_control_TajimaD<-read.table("~/NGS_analyses/VCF_pai_TajimaD/Adigitifera_larva23/Larva_control.Tajima.D_ed", header=TRUE)
+  Larva_heat_TajimaD<-read.table("~/NGS_analyses/VCF_pai_TajimaD/Adigitifera_larva23/Larva_heat.Tajima.D_ed", header=TRUE)
+  hist(Larva_control_TajimaD$TajimaD)
+  hist(Larva_heat_TajimaD$TajimaD)
+boxplot(Larva_control_TajimaD$TajimaD, Larva_heat_TajimaD$TajimaD, ylab="Tajima's D", names=c("Control", "Heat"))
+          
+# LMM of Tajima'sD
+
+Control<-Larva_control_TajimaD$TajimaD
+Heat<-Larva_heat_TajimaD$TajimaD
+# Create group labels
+group1 <- rep("control", length(Control))
+group2 <- rep("heat", length(Heat))
+
+# Combine column1 with its group label
+control_data <- data.frame(value = Control, group = group1)
+
+# Combine column2 with its group label
+experimental_data <- data.frame(value = Heat, group = group2)
+
+# Combine the two data frames into one
+combined_data <- rbind(control_data, experimental_data)
+
+# Install the packages if not already installed
+if (!require(lme4)) {
+  install.packages("lme4")
+  library(lme4)
+}
+if (!require(lmerTest)) {
+  install.packages("lmerTest")
+  library(lmerTest)
+}
+
+combined_data$fGroup<-factor(combined_data$group)
+
+# Null model without the group effect
+null_model <- lmer( value ~ (1 | fGroup), data =combined_data)
+# Alternative model with the group effect
+alt_model <- lmer(value ~ group + (1 | fGroup), data = combined_data)
+#compare model
+model_comparison <- anova(null_model, alt_model)
+print(model_comparison)
+
+
+##statistical analyses for π
+
+Control_π<-Larva_control_π$PI
+Heat_π<-Larva_heat_π$PI
+# Create group labels
+group1_π <- rep("control", length(Control_π))
+group2_π <- rep("heat", length(Heat_π))
+
+# Combine column1 with its group label
+control_data_π <- data.frame(value = Control_π, group = group1_π)
+
+# Combine column2 with its group label
+experimental_data_π <- data.frame(value = Heat_π, group = group2_π)
+
+# Combine the two data frames into one
+combined_data_π <- rbind(control_data_π, experimental_data_π)
+combined_data_π$fGroup<-factor(combined_data_π$group)
+
+# Null model without the group effect
+null_model_π <- lmer( value ~ (1 | fGroup), data =combined_data_π)
+# Alternative model with the group effect
+alt_model_π <- lmer(value ~ group + (1 | fGroup), data = combined_data_π)
+#compare model
+model_comparison_π <- anova(null_model_π, alt_model_π)
+print(model_comparison_π)
+
+
+
+#Histgram
+hist(Larva_control_TajimaD$TajimaD, col = rgb(1, 0, 0, 0.5), xlim = range(c(Larva_control_TajimaD$TajimaD, Larva_heat_TajimaD$TajimaD)),main = "Tajima's D", xlab="Tajima's D")
+# Add the second histogram
+hist(Larva_heat_TajimaD$TajimaD, col = rgb(0, 0, 1, 0.5), add = TRUE)
+# Add a legend
+legend("topright", legend = c("Control", "Heat"), fill = c(rgb(1, 0, 0, 0.5), rgb(0, 0, 1, 0.5)))
+
+boxplot(Larva_control_TajimaD$TajimaD, Larva_heat_TajimaD$TajimaD, names=c("Control", "Heat"), ylab="Tajima's D")
+
+#Histgram π
+hist(Larva_control_π$PI, col = rgb(1, 0, 0, 0.5), xlim = range(c(Larva_control_π$PI, Larva_heat_π$PI)),main = "π", xlab="π")
+# Add the second histogram
+hist(Larva_heat_π$PI, col = rgb(0, 0, 1, 0.5), add = TRUE)
+# Add a legend
+legend("topright", legend = c("Control", "Heat"), fill = c(rgb(1, 0, 0, 0.5), rgb(0, 0, 1, 0.5)))
+
+boxplot(Larva_control_π$PI, Larva_heat_π$PI, names=c("Control", "Heat"), ylab="π")
