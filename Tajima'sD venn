@@ -1,0 +1,150 @@
+##TajimaD loci matching venn
+Control_5per <- read.table("~/NGS_analyses/VCF_pai_TajimaD/Adigitifera_larva23/Larva_Control_geno025_maf001_wind5000.Tajima.D_5percentile", header = FALSE, stringsAsFactors = FALSE)
+Control_95per <- read.table("~/NGS_analyses/VCF_pai_TajimaD/Adigitifera_larva23/Larva_Control_geno025_maf001_wind5000.Tajima.D_95percentile", header = FALSE, stringsAsFactors = FALSE)
+Heat_5per <- read.table("~/NGS_analyses/VCF_pai_TajimaD/Adigitifera_larva23/Larva_Heat_geno025_maf001_wind5000.Tajima.D_5percentile", header = FALSE, stringsAsFactors = FALSE)
+Heat_95per <- read.table("~/NGS_analyses/VCF_pai_TajimaD/Adigitifera_larva23/Larva_Heat_geno025_maf001_wind5000.Tajima.D_95percentile", header = FALSE, stringsAsFactors = FALSE)
+
+# 2列を結合して1つの文字列に変換
+group1 <- paste(Control_5per$V1, Control_5per$V2, sep = "_")
+group2 <- paste(Control_95per$V1, Control_95per$V2, sep = "_")
+group3 <- paste(Heat_5per$V1, Heat_5per$V2, sep = "_")
+group4 <- paste(Heat_95per$V1, Heat_95per$V2, sep = "_")
+
+# リストデータの作成
+listInput <- list(
+  "Control lower Tajima'sD (5 percentile)" = group1,
+  "Control higher Tajima'sD (95 percentile)" = group2,
+  "Heat lower Tajima'sD (5 percentile)" = group3,
+  "Heat Higher Tajima'sD (95 percentile)" = group4
+
+# Venn図の作成
+library(ggvenn)
+p <- ggvenn(listInput,
+  fill_color = c("lightcoral","#EFC000FF", "#0073C2FF", "#007"),
+  labs(title = "Venn Diagram with Heat Groups in Red Gradient") +
+  theme(legend.position = "none"))
+
+
+# プロットの表示
+print(p)
+
+# パッケージのインストール（必要に応じて）
+if (!requireNamespace("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+BiocManager::install("GenomicRanges")
+
+# パッケージの読み込み
+library(GenomicRanges)
+
+
+#TajimaDの重なる領域を検証
+# 各ファイルを確認して、適切な列を使用
+# 例として、1列目がスキャフォルド、2列目が開始位置と仮定します。
+
+# 2列目を数値データに変換
+Control_5per$V2 <- as.numeric(Control_5per$V2)
+Control_95per$V2 <- as.numeric(Control_95per$V2)
+Heat_5per$V2 <- as.numeric(Heat_5per$V2)
+Heat_95per$V2 <- as.numeric(Heat_95per$V2)
+
+
+# 各データフレームに終了位置を計算
+Control_5per$end <- Control_5per$V2 + 5000
+Control_95per$end <- Control_95per$V2 + 5000
+Heat_5per$end <- Heat_5per$V2 + 5000
+Heat_95per$end <- Heat_95per$V2 + 5000
+
+# 各データをGenomicRangesオブジェクトに変換
+gr_Control_5per <- GRanges(seqnames = Control_5per$V1, ranges = IRanges(start = Control_5per$V2, end = Control_5per$end))
+gr_Control_95per <- GRanges(seqnames = Control_95per$V1, ranges = IRanges(start = Control_95per$V2, end = Control_95per$end))
+gr_Heat_5per <- GRanges(seqnames = Heat_5per$V1, ranges = IRanges(start = Heat_5per$V2, end = Heat_5per$end))
+gr_Heat_95per <- GRanges(seqnames = Heat_95per$V1, ranges = IRanges(start = Heat_95per$V2, end = Heat_95per$end))
+
+# Control_5per と Control_95per の重複領域
+overlap_Control <- findOverlaps(gr_Control_5per, gr_Control_95per)
+print(overlap_Control)
+
+# Heat_5per と Heat_95per の重複領域
+overlap_Heat <- findOverlaps(gr_Heat_5per, gr_Heat_95per)
+print(overlap_Heat)
+
+# Control_5per と Heat_5per の重複領域
+overlap_Control_Heat_5per <- findOverlaps(gr_Control_5per, gr_Heat_5per)
+print(overlap_Control_Heat_5per)
+
+# Control_95per と Heat_95per の重複領域
+overlap_Control_Heat_95per <- findOverlaps(gr_Control_95per, gr_Heat_95per)
+print(overlap_Control_Heat_95per)
+
+# 重複領域の例（Control_5per と Control_95per の重複領域）
+overlap_ranges_Control_5per_95per <- pintersect(gr_Control_5per[queryHits(overlaps_Control_5per_95per)], 
+                                                gr_Control_95per[subjectHits(overlaps_Control_5per_95per)])
+# 重複領域のゲノム座標を表示
+df_overlap_Control <- data.frame(
+  scaffold = seqnames(overlap_ranges_Control_5per_95per),
+  start = start(overlap_ranges_Control_5per_95per),
+  end = end(overlap_ranges_Control_5per_95per)
+)
+# 表示
+print(df_overlap_Control)
+# Heat_5per と Heat_95per の重複領域の例
+df_overlap_Heat <- data.frame(
+  scaffold = seqnames(overlap_ranges_Heat_5per_95per),
+  start = start(overlap_ranges_Heat_5per_95per),
+  end = end(overlap_ranges_Heat_5per_95per)
+)
+
+# 表示
+print(df_overlap_Heat)
+
+###重ならない領域の探索
+# Control_5per の他のセットと重ならない領域
+unique_Control_5per <- setdiff(gr_Control_5per, c(gr_Control_95per, gr_Heat_5per, gr_Heat_95per))
+
+# Control_95per の他のセットと重ならない領域
+unique_Control_95per <- setdiff(gr_Control_95per, c(gr_Control_5per, gr_Heat_5per, gr_Heat_95per))
+
+# Heat_5per の他のセットと重ならない領域
+unique_Heat_5per <- setdiff(gr_Heat_5per, c(gr_Control_5per, gr_Control_95per, gr_Heat_95per))
+
+# Heat_95per の他のセットと重ならない領域
+unique_Heat_95per <- setdiff(gr_Heat_95per, c(gr_Control_5per, gr_Control_95per, gr_Heat_5per))
+
+
+# Control_5per のユニーク領域を表示
+df_unique_Control_5per <- data.frame(
+  scaffold = seqnames(unique_Control_5per),
+  start = start(unique_Control_5per),
+  end = end(unique_Control_5per)
+)
+print(df_unique_Control_5per)
+
+# Heat_95per のユニーク領域を表示
+df_unique_Heat_95per <- data.frame(
+  scaffold = seqnames(unique_Heat_95per),
+  start = start(unique_Heat_95per),
+  end = end(unique_Heat_95per)
+)
+print(df_unique_Heat_95per)
+
+# Heat_5per のユニーク領域
+df_unique_Heat_5per <- data.frame(
+  scaffold = seqnames(unique_Heat_5per),
+  start = start(unique_Heat_5per),
+  end = end(unique_Heat_5per)
+)
+print(df_unique_Heat_5per)
+
+# Control_95per のユニーク領域
+df_unique_Control_95per <- data.frame(
+  scaffold = seqnames(unique_Control_95per),
+  start = start(unique_Control_95per),
+  end = end(unique_Control_95per)
+)
+print(df_unique_Control_95per)
+
+# ユニーク領域をCSVファイルに保存
+write.csv(df_unique_Heat_5per, "~/NGS_analyses/VCF_pai_TajimaD/Adigitifera_larva23/unique_heat_5per.csv", row.names = FALSE)
+write.csv(df_unique_Control_95per, "~/NGS_analyses/VCF_pai_TajimaD/Adigitifera_larva23/unique_control_95per.csv", row.names = FALSE)
+write.csv(df_unique_Heat_95per, "~/NGS_analyses/VCF_pai_TajimaD/Adigitifera_larva23/unique_heat_95per.csv", row.names = FALSE)
+write.csv(df_unique_Control_5per, "~/NGS_analyses/VCF_pai_TajimaD/Adigitifera_larva23/unique_control_5per.csv", row.names = FALSE)
