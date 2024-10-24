@@ -5,7 +5,7 @@
 #$ -l s_vmem=100G
 #$ -l mem_req=100G
 
-# sed "s/_/,/g" Larva_Control_geno025_maf001_wind5000.Tajima.D_5percentile | nl | sed "s/^   /SNP_/g" | sed "s/\t/,/g" | sed "s/SNP_  /SNP_/g" | sed "s/SNP_ /SNP_/g" > Control_TajimaD_5percentile_wind5000.txt
+#please change the files of each percentile of each condition
 grep -v sca unique_heat_5per.csv | sed "s/^.//g" | nl | sed "s/.1.,/.1,/g" | sed "s/^   /SNP_/g" | sed "s/\t/,/g" | sed "s/SNP_  /SNP_/g" | sed "s/SNP_ /SNP_/g" > unique_heat_5per_list.txt
 
 mkdir -p Heat_TajimaD_5percentile_uniq
