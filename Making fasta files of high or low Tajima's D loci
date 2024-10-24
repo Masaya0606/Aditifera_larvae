@@ -1,23 +1,36 @@
-## Making fasta file of Lower or Higher Tajima's D loci in control or heat conditions. Please change file names when you run the script with each file such as Control_95percentile and Control_5percentile
 #!/usr/bin/bash
+#!/usr/bin/sh
+#$ -S /usr/bin/bash
+#$ -cwd
+#$ -l s_vmem=100G
+#$ -l mem_req=100G
 
-fatt unfold GCA_014634065.1_Adig_2.0_genomic.fna > unfold_genome.fasta
+# sed "s/_/,/g" Larva_Control_geno025_maf001_wind5000.Tajima.D_5percentile | nl | sed "s/^   /SNP_/g" | sed "s/\t/,/g" | sed "s/SNP_  /SNP_/g" | sed "s/SNP_ /SNP_/g" > Control_TajimaD_5percentile_wind5000.txt
+grep -v sca unique_heat_5per.csv | sed "s/^.//g" | nl | sed "s/.1.,/.1,/g" | sed "s/^   /SNP_/g" | sed "s/\t/,/g" | sed "s/SNP_  /SNP_/g" | sed "s/SNP_ /SNP_/g" > unique_heat_5per_list.txt
 
-sed "s/_/,/g" Control_95percentile |nl|sed "s/^   /SNP_/g"|sed "s/\t/,/g"|sed "s/SNP_  /SNP_/g"|sed "s/SNP_ /SNP_/g" >Control_95percentile.txt
+mkdir -p Heat_TajimaD_5percentile_uniq
 
-mkdir Control_95percentile
-
-for i in `cat Control_95percentile.txt`
+for i in `cat unique_heat_5per_list.txt`
 do
-
-echo "$i" > line.tmp
-ID=`cut -f 1 -d "," line.tmp`
-CHR=`cut -f 2 -d "," line.tmp`
-STR=`cut -f 3 -d "," line.tmp | awk '{print $0-200}'`
-END=`cut -f 3 -d "," line.tmp | awk '{print $0+200}'`
-
-echo -e ">$ID" > fasta_Adigi_Larva23_95percentile/"$ID".fasta
-
-grep -A1 "$CHR" unfold_genome.fasta | cut -c "$STR"-"$END" | tail -1 >> fasta_Control_95percentile/"$ID".fasta
-
+  echo "$i" > line.tmp
+  ID=`cut -f 1 -d "," line.tmp`
+  CHR=`cut -f 2 -d "," line.tmp`
+  STR=`cut -f 3 -d "," line.tmp | awk '{print $0}'`
+  END=`cut -f 3 -d "," line.tmp | awk '{print $0+5000}'`  # Get a range of 5000bp
+  
+  # Split and process every 1000bp
+  for ((j=0; j<5; j++))
+  do
+    SUBSTR=$((STR + j * 1000))  # Start position
+    SUBEND=$((SUBSTR + 999))    # End position
+    
+     # Match the filename with the FASTA header
+    FILENAME="${ID}_$((j+1)).fasta"
+    HEADER_NAME="${FILENAME%.fasta}"  # Remove .fasta
+    echo "Processing: $FILENAME with range $SUBSTR-$SUBEND on chromosome $CHR"
+    echo -e ">$HEADER_NAME" > Heat_TajimaD_5percentile_uniq/"$FILENAME"
+    
+    # Extract the corresponding sequence and write it to the file
+    grep -A1 "$CHR" unfold_genome.fasta | cut -c "$SUBSTR"-"$SUBEND" | tail -1 >> Heat_TajimaD_5percentile_uniq/"$FILENAME"
+  done
 done
